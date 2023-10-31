@@ -1,0 +1,48 @@
+import pandas as pd
+from itertools import combinations
+from sklearn.linear_model import LinearRegression
+from google.colab import files
+
+import math
+import pandas as pd
+
+uploaded = files.upload()
+# 读取CSV文件
+data = pd.read_csv('MData.csv')
+
+# 找出列数大于600的列
+columns_to_process = [col for col in data.columns if len(data[col].dropna()) > 600]
+
+# 存储相关系数和回归向量的结果
+correlations = []
+regression_results = []
+
+# 计算两两相关系数和回归向量
+for col1, col2 in combinations(columns_to_process, 2):
+    # 去除空值
+    valid_data = data[[col1, col2]].dropna()
+    # 计算相关系数
+    correlation = valid_data[col1].corr(valid_data[col2])
+    # 如果相关系数的绝对值大于0.2
+    if abs(correlation) > 0.2:
+        correlations.append((col1, col2, correlation))
+        # 计算线性回归向量
+        X = valid_data[[col1]]
+        y = valid_data[col2]
+        model = LinearRegression().fit(X, y)
+        w0 = model.intercept_
+        w1 = model.coef_[0]
+        regression_results.append((col1, col2, w0, w1))
+
+# 将相关系数和回归向量的结果存储到CSV文件
+correlations_df = pd.DataFrame(correlations, columns=['Column1', 'Column2', 'Correlation'])
+regression_df = pd.DataFrame(regression_results, columns=['Column1', 'Column2', 'w0', 'w1'])
+
+correlations_df.to_csv('correlations_output.csv', index=False)
+regression_df.to_csv('regression_output.csv', index=False)
+
+# 打印结果
+print("Correlations:")
+print(correlations_df)
+print("\nRegression Results:")
+print(regression_df)
